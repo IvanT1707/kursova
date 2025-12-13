@@ -14,34 +14,16 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
       - key: FIREBASE_DATABASE_URL
-        fromService:
-          name: sport-rent-app
-          type: env
-          property: FIREBASE_DATABASE_URL
-      - key: GOOGLE_APPLICATION_CREDENTIALS
-        fromService:
-          name: sport-rent-app
-          type: env
-          property: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
     plan: free  # Безкоштовний план для демонстрації
     autoDeploy: true  # Автоматичний деплой при пушах у main гілку
-
-    # Налаштування для статичних файлів
-    staticPublishPath: ./dist
-
-    # Налаштування здоров'я сервісу
-    healthCheckPath: /api/health
-    healthCheckTimeout: 10
-    healthCheckInterval: 60
-
-    # Налаштування масштабування
-    numInstances: 1
-    instanceSize: free  # 512MB RAM, спільний CPU
-
-    # Додаткові налаштування продуктивності
-    ignoreCache: false
-    skipCache: false
 
 # Додаткові сервіси (якщо потрібно)
 # databases:

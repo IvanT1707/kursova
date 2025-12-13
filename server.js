@@ -23,18 +23,34 @@ dotenv.config({ path: '.env' });
 console.log('Environment variables loaded:');
 console.log('- FIREBASE_DATABASE_URL:', process.env.FIREBASE_DATABASE_URL);
 console.log('- GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
+console.log('- FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID);
 console.log('- PORT:', process.env.PORT);
 
 // Initialize Firebase Admin
 console.log('Initializing Firebase Admin...');
 
 try {
-  // Read the service account key file
-  const serviceAccount = JSON.parse(fs.readFileSync('./serviceAccountKey.json', 'utf8'));
-  console.log('Service account key loaded successfully');
+  let credential;
+  
+  // Check if we're in production (Render) or development
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+    // Production: Use environment variables
+    console.log('Using Firebase credentials from environment variables');
+    credential = admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+    });
+  } else {
+    // Development: Use service account key file
+    console.log('Using Firebase service account key file');
+    const serviceAccount = JSON.parse(fs.readFileSync('./serviceAccountKey.json', 'utf8'));
+    console.log('Service account key loaded successfully');
+    credential = admin.credential.cert(serviceAccount);
+  }
   
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: credential,
     databaseURL: process.env.FIREBASE_DATABASE_URL
   });
   
