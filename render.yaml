@@ -1,0 +1,51 @@
+# Файл конфігурації для автоматичного деплою на Render
+# Документація: https://render.com/docs/deploy-render-yaml
+
+services:
+  - type: web
+    name: sport-rent-app
+    env: node
+    region: frankfurt  # Європейський регіон для кращої швидкості
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FIREBASE_DATABASE_URL
+        fromService:
+          name: sport-rent-app
+          type: env
+          property: FIREBASE_DATABASE_URL
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        fromService:
+          name: sport-rent-app
+          type: env
+          property: GOOGLE_APPLICATION_CREDENTIALS
+    plan: free  # Безкоштовний план для демонстрації
+    autoDeploy: true  # Автоматичний деплой при пушах у main гілку
+
+    # Налаштування для статичних файлів
+    staticPublishPath: ./dist
+
+    # Налаштування здоров'я сервісу
+    healthCheckPath: /api/health
+    healthCheckTimeout: 10
+    healthCheckInterval: 60
+
+    # Налаштування масштабування
+    numInstances: 1
+    instanceSize: free  # 512MB RAM, спільний CPU
+
+    # Додаткові налаштування продуктивності
+    ignoreCache: false
+    skipCache: false
+
+# Додаткові сервіси (якщо потрібно)
+# databases:
+#   - name: sport-rent-db
+#     databaseName: sportrent
+#     user: sportrent_user
+#     plan: free
