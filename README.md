@@ -61,8 +61,9 @@ npm run dev
    - `NODE_ENV`: `production`
    - `PORT`: `10000`
    - `FIREBASE_PROJECT_ID`: ваш project ID
-   - `FIREBASE_PRIVATE_KEY`: приватний ключ
+   - `FIREBASE_PRIVATE_KEY`: приватний ключ (з serviceAccountKey.json)
    - `FIREBASE_CLIENT_EMAIL`: email сервісного акаунту
+   - `FIREBASE_DATABASE_URL`: https://ваш-project-id-default-rtdb.firebaseio.com/
 
 5. Деплой буде виконано автоматично
 
