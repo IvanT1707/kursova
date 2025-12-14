@@ -432,8 +432,6 @@ nav ul li a.active {
   color: var(--text-light);
   cursor: not-allowed;
 }
-  cursor: not-allowed;
-}
 
 .quantity-select {
   margin: 10px 0;
@@ -525,7 +523,6 @@ nav ul li a.active {
   font-size: 0.85rem;
   min-height: 1rem;
   font-weight: 500;
-}
 }
 
 .payment-form hr {
@@ -998,18 +995,6 @@ nav ul li a.active {
 .cart-actions {
   display: flex;
   gap: 0.75rem;
-}
-  display:inline-block;
-  min-width: 200px;
-  background-color: #333;
-  color: white;
-  padding: 8px;
-  left: 50%;
-  border-radius: 4px;
-  transform: translateX(-50%) rotateX(90deg); 
-  transform-origin: top; 
-  opacity: 0; 
-  transition: transform 0.3s ease, opacity 0.3s ease
 }
 
 .detail:hover .detail-text{
