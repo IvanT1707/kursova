@@ -15,5 +15,7 @@ export default defineConfig({
   base: '/',
   build: {
     outDir: 'dist',
+    sourcemap: false, // Вимкнути sourcemaps для продакшену
+    chunkSizeWarningLimit: 600, // Підвищити ліміт попередження
   },
 })

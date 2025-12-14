@@ -166,16 +166,18 @@ const EquipmentCard = ({ item, onRent, onAddToCart }) => {
           <span className="text-sm text-gray-500">за день</span>
         </div>
 
-        {/* Деталі з анімацією */}
-        <div className="detail mb-4">
-          <button className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Деталі
-          </button>
-          <div className="detail-text text-sm text-gray-600 mt-2 p-3 bg-gray-50 rounded-lg">
-            {item.detail}
+        {/* Деталі */}
+        <div className="mb-4">
+          <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+            <div className="flex items-start gap-2">
+              <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <span className="font-medium text-gray-700">Опис:</span>
+                <p className="mt-1">{item.detail}</p>
+              </div>
+            </div>
           </div>
         </div>
 

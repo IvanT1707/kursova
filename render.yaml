@@ -6,14 +6,26 @@ services:
     name: sport-rent-app
     env: node
     region: frankfurt  # Європейський регіон для кращої швидкості
-    buildCommand: npm install && npm run build
+    runtime: node
+    buildCommand: |
+      echo "🚀 Starting optimized build..."
+      npm ci --only=production --no-audit --no-fund --prefer-offline
+      npm run build
+      echo "✅ Build completed successfully"
     startCommand: node server.js
     healthCheckPath: /api/health
+    autoDeploy: false  # Вимкнути авто-деплой для ручного контролю
+    disk:
+      name: cache
+      mountPath: /opt/render/cache
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: NPM_CONFIG_CACHE
+        value: /opt/render/cache/.npm
       - key: FIREBASE_PROJECT_ID
         sync: false
       - key: FIREBASE_PRIVATE_KEY
