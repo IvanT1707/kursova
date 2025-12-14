@@ -208,8 +208,30 @@ app.get('/api/rentals', async (req, res) => {
       });
     });
 
-    console.log(`Returning ${rentals.length} rentals for user ${userId}`);
-    res.json({ data: rentals });
+    // Додати зображення з обладнання для кожного rental
+    const rentalsWithImages = await Promise.all(rentals.map(async (rental) => {
+      try {
+        const equipmentDoc = await db.collection('equipment').doc(rental.equipmentId).get();
+        if (equipmentDoc.exists) {
+          const equipmentData = equipmentDoc.data();
+          return {
+            ...rental,
+            image: equipmentData.image || '',
+            category: equipmentData.category || 'other'
+          };
+        }
+      } catch (error) {
+        console.warn(`Could not fetch equipment for rental ${rental.id}:`, error);
+      }
+      return {
+        ...rental,
+        image: '',
+        category: 'other'
+      };
+    }));
+
+    console.log(`Returning ${rentalsWithImages.length} rentals for user ${userId}`);
+    res.json({ data: rentalsWithImages });
   } catch (error) {
     console.error('Помилка отримання оренд:', error);
     res.status(500).json({

@@ -122,6 +122,20 @@ const EquipmentCard = ({ item, onRent }) => {
         />
       </div>
 
+      <div className="quantity-select">
+        <label htmlFor={`quantity-${item.id}`}>Кількість:</label>
+        <select
+          id={`quantity-${item.id}`}
+          value={quantity}
+          onChange={(e) => setQuantity(Number(e.target.value))}
+          disabled={!isAuthenticated || item.stock === 0}
+        >
+          {Array.from({ length: Math.min(item.stock || 1, 10) }, (_, i) => i + 1).map(num => (
+            <option key={num} value={num}>{num}</option>
+          ))}
+        </select>
+      </div>
+
       {!isAuthenticated && (
         <div className="auth-notice">
           <p style={{ fontSize: '14px', color: '#666', textAlign: 'center', margin: '10px 0' }}>

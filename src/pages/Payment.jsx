@@ -2,14 +2,16 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PaymentForm from '../components/PaymentForm';
 
-function Payment() {
+const Payment = () => {
   return (
     <>
       <Header />
-      <h1 className="hero" style={{ textAlign: 'center' }}>Оплата оренди</h1>
-      <p style={{ textAlign: 'center' }}>Виберіть спосіб оплати та введіть необхідні дані</p>
-      <main>
-        <PaymentForm />
+      <main className="profile-container">
+        <div className="form-card">
+          <h1>Оплата оренди</h1>
+          <p>Виберіть спосіб оплати та введіть необхідні дані</p>
+          <PaymentForm />
+        </div>
       </main>
       <Footer />
     </>

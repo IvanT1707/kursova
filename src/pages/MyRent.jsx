@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RentalCard from '../components/RentalCard';
 import Header from '../components/Header';
@@ -15,6 +15,10 @@ const MyRent = () => {
   const [userToken, setUserToken] = useState(null);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortBy, setSortBy] = useState('name'); // name, price, startDate, endDate
+  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,7 +113,9 @@ const MyRent = () => {
             endDate,
             status: rental.status || 'active',
             userId: rental.userId,
-            equipmentId: rental.equipmentId
+            equipmentId: rental.equipmentId,
+            category: rental.category || 'other',
+            image: rental.image || ''
           };
         });
 
@@ -133,8 +139,57 @@ const MyRent = () => {
     }
   }, [checkedAuth, userToken, minPrice, maxPrice]);
 
-  const cancelRental = async (index) => {
-    const rentalToDelete = cart[index];
+  const filteredAndSortedRentals = useMemo(() => {
+    if (!Array.isArray(cart)) return [];
+    
+    // Filter
+    const filtered = cart.filter(rental => {
+      if (!rental) return false;
+      
+      const matchPrice = (!minPrice || rental.price >= Number(minPrice)) && 
+                        (!maxPrice || rental.price <= Number(maxPrice));
+      const matchSearch = !searchTerm || 
+        (rental.name && rental.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchCategory = !selectedCategory || rental.category === selectedCategory;
+      
+      return matchPrice && matchSearch && matchCategory;
+    });
+    
+    // Sort
+    const sorted = [...filtered].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'price':
+          aValue = a.price || 0;
+          bValue = b.price || 0;
+          break;
+        case 'startDate':
+          aValue = a.startDate || new Date(0);
+          bValue = b.startDate || new Date(0);
+          break;
+        case 'endDate':
+          aValue = a.endDate || new Date(0);
+          bValue = b.endDate || new Date(0);
+          break;
+        case 'name':
+        default:
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+      }
+      
+      if (sortOrder === 'desc') {
+        return aValue < bValue ? 1 : -1;
+      }
+      return aValue > bValue ? 1 : -1;
+    });
+    
+    return sorted;
+  }, [cart, minPrice, maxPrice, searchTerm, selectedCategory, sortBy, sortOrder]);
+
+  const cancelRental = async (rentalId) => {
+    const rentalToDelete = cart.find(r => r.id === rentalId);
 
     if (!rentalToDelete || !rentalToDelete.id) {
       alert('Помилка: не вдалося знайти оренду для скасування');
@@ -159,8 +214,7 @@ const MyRent = () => {
       }
 
       // Remove from local state
-      const updatedCart = [...cart];
-      updatedCart.splice(index, 1);
+      const updatedCart = cart.filter(r => r.id !== rentalId);
       setCart(updatedCart);
 
       alert('Оренду скасовано');
@@ -188,6 +242,17 @@ const MyRent = () => {
           flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label htmlFor="searchTerm">Пошук:</label>
+            <input
+              id="searchTerm"
+              type="text"
+              placeholder="Назва обладнання"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc', width: '150px' }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <label htmlFor="minPrice">Мін. ціна:</label>
             <input
               id="minPrice"
@@ -209,10 +274,47 @@ const MyRent = () => {
               style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc', width: '100px' }}
             />
           </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc' }}
+          >
+            <option value="">Усі категорії</option>
+            <option value="bike">Велосипеди</option>
+            <option value="skate">Ролики</option>
+            <option value="other">Інше</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc' }}
+          >
+            <option value="name">Сортувати за назвою</option>
+            <option value="price">Сортувати за ціною</option>
+            <option value="startDate">Сортувати за початком</option>
+            <option value="endDate">Сортувати за закінченням</option>
+          </select>
+          <button 
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            style={{ 
+              padding: '8px 16px', 
+              backgroundColor: '#f0f0f0', 
+              border: '1px solid #ccc', 
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+            title={sortOrder === 'asc' ? 'Змінити на спадання' : 'Змінити на зростання'}
+          >
+            {sortOrder === 'asc' ? '↑ Зростання' : '↓ Спадання'}
+          </button>
           <button 
             onClick={() => {
+              setSearchTerm('');
               setMinPrice('');
               setMaxPrice('');
+              setSelectedCategory('');
+              setSortBy('name');
+              setSortOrder('asc');
             }}
             style={{ 
               padding: '8px 16px', 
@@ -231,10 +333,10 @@ const MyRent = () => {
             <p style={{ textAlign: 'center' }}>Завантаження даних...</p>
           ) : error ? (
             <p style={{ textAlign: 'center', color: 'red' }}>{error}</p>
-          ) : !Array.isArray(cart) || cart.length === 0 ? (
-            <p style={{ textAlign: 'center' }}>Наразі немає активних оренд.</p>
+          ) : !Array.isArray(filteredAndSortedRentals) || filteredAndSortedRentals.length === 0 ? (
+            <p style={{ textAlign: 'center' }}>Немає оренд за вибраними параметрами.</p>
           ) : (
-            cart.map((rental, index) => {
+            filteredAndSortedRentals.map((rental, index) => {
               if (!rental || !rental.id) {
                 console.warn('Skipping invalid rental at index:', index, rental);
                 return null;
@@ -246,7 +348,7 @@ const MyRent = () => {
                 <RentalCard
                   key={rental.id}
                   rental={rental}
-                  onCancel={() => cancelRental(index)}
+                  onCancel={() => cancelRental(rental.id)}
                 />
               );
             })

@@ -44,6 +44,17 @@ const formatPrice = (price) => {
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
 
+// Function to correctly display image path
+const getImagePath = (imagePath) => {
+  if (!imagePath) return '';
+  // If path starts with /images/, leave as is
+  if (imagePath.startsWith('/images/')) return imagePath;
+  // If path starts with ./, remove dot
+  if (imagePath.startsWith('./')) return imagePath.substring(1);
+  // Otherwise add /images/
+  return `/images/${imagePath}`;
+};
+
 const RentalCard = ({ rental, onCancel }) => {
   // Skip rendering if no valid rental data
   if (!rental || typeof rental !== 'object') {
@@ -57,7 +68,8 @@ const RentalCard = ({ rental, onCancel }) => {
     startDate: startDateRaw, 
     endDate: endDateRaw, 
     quantity = 1,
-    price = 0
+    price = 0,
+    image = ''
   } = rental;
   
   // Convert dates BEFORE any comparisons or rendering
@@ -118,6 +130,23 @@ const RentalCard = ({ rental, onCancel }) => {
       opacity: isExpired ? 0.7 : 1,
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
+      {image && (
+        <img 
+          src={getImagePath(image)}
+          alt={name} 
+          style={{
+            width: '100px',
+            height: '100px',
+            objectFit: 'cover',
+            borderRadius: '4px',
+            marginBottom: '12px',
+            float: 'right'
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+      )}
       <h3 style={{ marginTop: 0, marginBottom: '12px', color: isExpired ? '#6c757d' : '#212529' }}>
         {String(name)}
       </h3>
@@ -157,14 +186,25 @@ const RentalCard = ({ rental, onCancel }) => {
               backgroundColor: '#dc3545',
               color: 'white',
               border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
+              padding: '10px 20px',
+              borderRadius: '8px',
               cursor: 'pointer',
-              transition: 'background-color 0.2s',
-              fontWeight: '500'
+              transition: 'all 0.3s ease',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxShadow: '0 2px 4px rgba(220, 53, 69, 0.2)',
+              minWidth: '120px'
             }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#c82333'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc3545'}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#c82333';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc3545';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(220, 53, 69, 0.2)';
+            }}
           >
             Скасувати оренду
           </button>
