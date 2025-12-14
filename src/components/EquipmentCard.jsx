@@ -47,6 +47,55 @@ const EquipmentCard = ({ item, onRent, onAddToCart }) => {
     onAddToCart(item, startDate, endDate, quantity);
   };
 
+  const handleRent = async () => {
+    if (!isAuthenticated) {
+      toast.info('Будь ласка, увійдіть у систему для оренди обладнання');
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      toast.error('Будь ласка, виберіть дату початку та завершення оренди');
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error('Дата початку не може бути пізніше за дату завершення');
+      return;
+    }
+
+    if (quantity > item.stock) {
+      toast.error('Вибрана кількість перевищує наявність');
+      return;
+    }
+
+    if (typeof item.price !== 'number' || item.price <= 0) {
+      toast.error('Помилка: ціна обладнання недійсна');
+      return;
+    }
+
+    const totalDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 1;
+    const totalPrice = item.price * totalDays * quantity;
+
+    setIsLoading(true);
+    try {
+      await onRent(item.id, startDate, endDate, quantity, item.name, item.price);
+
+      setIsRented(true);
+      setStartDate('');
+      setEndDate('');
+      setQuantity(1);
+      toast.success(`Оренда "${item.name}" створена успішно!`);
+
+      // Reset the rented state after 2 seconds
+      setTimeout(() => setIsRented(false), 2000);
+    } catch (err) {
+      console.error('Помилка при оренді:', err);
+      toast.error(err.response?.data?.error || 'Помилка під час збереження оренди');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!item) {
     console.error('EquipmentCard received null or undefined item');
     return <div className="item">Помилка: відсутні дані про обладнання</div>;
