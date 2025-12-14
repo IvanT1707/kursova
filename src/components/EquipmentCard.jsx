@@ -145,8 +145,7 @@ const EquipmentCard = ({ item, onRent }) => {
       )}
 
       <div className="detail">
-        Деталі
-        <span className="detail-text"> {item.detail}</span>
+        <strong>Деталі:</strong> <span className="detail-text">{item.detail}</span>
       </div>
 
       <button
