@@ -229,9 +229,10 @@ nav ul li a.active {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
-  top: 80px;
+  top: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
+  margin-top: 20px;
 }
 
 .search-input,
@@ -1359,6 +1360,7 @@ footer p {
 .cart-button svg {
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
 }
 
 .cart-count {
@@ -1386,6 +1388,20 @@ footer p {
   50% {
     transform: scale(1.1);
   }
+}
+
+/* Обмеження розмірів SVG іконок */
+svg {
+  max-width: 100%;
+  max-height: 100%;
+  flex-shrink: 0;
+}
+
+/* Спеціальні стилі для іконок у кнопках */
+button svg, .status-badge svg {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
 }
 
 /* Стилі для кнопок додавання до кошика */
