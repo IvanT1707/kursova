@@ -112,7 +112,7 @@ const Rent = () => {
         quantity
       });
       
-      toast.success(`Оренда "${name}" успішно оформлена!`);
+      // toast.success(`Оренда "${name}" успішно оформлена!`); // Видалено, щоб уникнути дублювання повідомлень
     } catch (err) {
       console.error('Помилка оформлення оренди:', err);
       // Error is already handled by the API interceptor
