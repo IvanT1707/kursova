@@ -164,6 +164,9 @@ app.get('/api/equipment', async (req, res) => {
 // GET /api/rentals - Отримати всі оренди (з авторизацією)
 app.get('/api/rentals', async (req, res) => {
   try {
+    // Спочатку перевірити завершені оренди
+    await completeExpiredRentals();
+    
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -440,10 +443,73 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Щось пішло не так!' });
+// Функція для автоматичного завершення оренд
+async function completeExpiredRentals() {
+  try {
+    console.log('Перевірка завершених оренд...');
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Знайти всі активні оренди, де endDate <= сьогодні
+    const expiredRentalsSnapshot = await db.collection('rentals')
+      .where('status', '==', 'active')
+      .where('endDate', '<=', today.toISOString().split('T')[0])
+      .get();
+    
+    if (expiredRentalsSnapshot.empty) {
+      console.log('Немає завершених оренд для обробки');
+      return;
+    }
+    
+    console.log(`Знайдено ${expiredRentalsSnapshot.size} завершених оренд`);
+    
+    const batch = db.batch();
+    const equipmentUpdates = new Map();
+    
+    expiredRentalsSnapshot.forEach(doc => {
+      const rental = doc.data();
+      
+      // Оновити статус оренди
+      batch.update(doc.ref, { 
+        status: 'completed',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Підготувати повернення обладнання
+      if (!equipmentUpdates.has(rental.equipmentId)) {
+        equipmentUpdates.set(rental.equipmentId, 0);
+      }
+      equipmentUpdates.set(rental.equipmentId, equipmentUpdates.get(rental.equipmentId) + rental.quantity);
+    });
+    
+    // Виконати пакетне оновлення оренд
+    await batch.commit();
+    
+    // Повернути обладнання в stock
+    for (const [equipmentId, quantityToReturn] of equipmentUpdates) {
+      const equipmentRef = db.collection('equipment').doc(equipmentId);
+      await equipmentRef.update({
+        stock: admin.firestore.FieldValue.increment(quantityToReturn)
+      });
+      console.log(`Повернуто ${quantityToReturn} одиниць обладнання ${equipmentId}`);
+    }
+    
+    console.log(`Успішно завершено ${expiredRentalsSnapshot.size} оренд`);
+  } catch (error) {
+    console.error('Помилка при завершенні оренд:', error);
+  }
+}
+
+// POST /api/rentals/complete-expired - Завершити всі прострочені оренди (для cron job)
+app.post('/api/rentals/complete-expired', async (req, res) => {
+  try {
+    await completeExpiredRentals();
+    res.json({ message: 'Перевірка завершених оренд виконана' });
+  } catch (error) {
+    console.error('Помилка при завершенні оренд:', error);
+    res.status(500).json({ error: 'Помилка при завершенні оренд' });
+  }
 });
 
 // Start the server
@@ -451,6 +517,12 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`Сервер запущено на порту ${PORT}`);
   console.log(`Доступно за посиланням: http://localhost:${PORT}`);
+  
+  // Запустити перевірку завершених оренд при старті сервера
+  completeExpiredRentals();
+  
+  // Перевіряти завершені оренди кожні 24 години
+  setInterval(completeExpiredRentals, 24 * 60 * 60 * 1000);
 });
 
 // Handle unhandled promise rejections

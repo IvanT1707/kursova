@@ -69,7 +69,8 @@ const RentalCard = ({ rental, onCancel }) => {
     endDate: endDateRaw, 
     quantity = 1,
     price = 0,
-    image = ''
+    image = '',
+    status = 'active'
   } = rental;
   
   // Convert dates BEFORE any comparisons or rendering
@@ -99,8 +100,10 @@ const RentalCard = ({ rental, onCancel }) => {
   
   // Check rental status
   const isExpired = endDate < now;
-  const isUpcoming = startDate > now;
-  const isActive = !isExpired && !isUpcoming;
+  const isCompleted = status === 'completed';
+  const isCancelled = status === 'cancelled';
+  const isUpcoming = startDate > now && !isCompleted && !isCancelled;
+  const isActive = !isExpired && !isUpcoming && !isCompleted && !isCancelled;
 
   // Format date for display - ensure we return strings
   const formatDisplayDate = (date) => {
@@ -158,8 +161,28 @@ const RentalCard = ({ rental, onCancel }) => {
         <p style={{ margin: '4px 0' }}><strong>Ціна:</strong> {formatPrice(price)} грн</p>
       </div>
       
-      <div style={{ marginTop: '12px' }}>
-        {isExpired ? (
+      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {isCompleted ? (
+          <span style={{ 
+            color: '#28a745',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#d4edda',
+            display: 'inline-block'
+          }}>
+            Завершено
+          </span>
+        ) : isCancelled ? (
+          <span style={{ 
+            color: '#6c757d',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#f8f9fa',
+            display: 'inline-block'
+          }}>
+            Скасовано
+          </span>
+        ) : isExpired ? (
           <span style={{ 
             color: '#dc3545',
             padding: '4px 8px',
@@ -167,7 +190,7 @@ const RentalCard = ({ rental, onCancel }) => {
             backgroundColor: '#ffebee',
             display: 'inline-block'
           }}>
-            Завершено
+            Прострочено
           </span>
         ) : isUpcoming ? (
           <span style={{ 
@@ -179,7 +202,30 @@ const RentalCard = ({ rental, onCancel }) => {
           }}>
             Очікується
           </span>
+        ) : isActive ? (
+          <span style={{ 
+            color: '#007bff',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#e7f3ff',
+            display: 'inline-block'
+          }}>
+            Активна
+          </span>
         ) : (
+          <span style={{ 
+            color: '#6c757d',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#f8f9fa',
+            display: 'inline-block'
+          }}>
+            Невідомий статус
+          </span>
+        )}
+        
+        {/* Кнопка скасування тільки для активних оренд */}
+        {isActive && (
           <button 
             onClick={onCancel}
             style={{
