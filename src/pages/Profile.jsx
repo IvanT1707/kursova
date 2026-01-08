@@ -100,7 +100,8 @@ const Profile = () => {
   };
 
   // Статистика користувача (тільки коли користувач є орендарем)
-  const userRentals = rentals.filter(r => r.userRole === 'renter');
+  // Враховуємо тільки оренди, які не скасовані і не відхилені
+  const userRentals = rentals.filter(r => r.userRole === 'renter' && r.status !== 'cancelled' && r.status !== 'rejected');
   const totalRentals = userRentals.length;
   const activeRentals = userRentals.filter(r => r.status === 'active' || (r.endDate && new Date(r.endDate) > new Date())).length;
   const totalSpent = userRentals.reduce((sum, rental) => sum + (rental.price * rental.quantity), 0);
