@@ -95,7 +95,7 @@ const Rent = () => {
     }
   }, [checkedAuth]);
 
-  const handleRent = async (id, startDate, endDate, quantity, name, price) => {
+  const handleRent = async (id, durationDays, quantity, name, price) => {
     try {
       if (typeof price !== 'number' || price <= 0) {
         console.error('Некоректна ціна:', price);
@@ -107,8 +107,7 @@ const Rent = () => {
         equipmentId: id,
         name,
         price: price,
-        startDate,
-        endDate,
+        durationDays,
         quantity
       });
       

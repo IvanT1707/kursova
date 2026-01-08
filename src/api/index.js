@@ -15,7 +15,12 @@ api.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('Request token (first 20 chars):', token.substring(0, 20) + '...');
   }
+  // Disable caching
+  config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+  config.headers['Pragma'] = 'no-cache';
+  config.headers['Expires'] = '0';
   return config;
 }, (error) => {
   return Promise.reject(error);
@@ -55,7 +60,9 @@ const getToken = async () => {
 
 export const getEquipment = async () => {
   try {
+    console.log('getEquipment: Fetching equipment...');
     const response = await api.get('/equipment');
+    console.log('getEquipment: Response received:', response.data);
     let responseData = response.data;
     
     // Basic response validation
@@ -103,7 +110,10 @@ export const getEquipment = async () => {
           stock: Number(item.stock) || 0,
           category: item.category || 'other',
           image: item.image || '/images/placeholder.png',
-          detail: item.detail || 'Опис відсутній'
+          detail: item.detail || 'Опис відсутній',
+          ownerId: item.ownerId, // IMPORTANT: Preserve ownerId for security checks
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
         };
         
         console.log(`Processed item ${index}:`, processedItem);
@@ -120,6 +130,37 @@ export const getEquipment = async () => {
     console.error('Error fetching equipment:', error);
     // Повертаємо порожній масив замість викидання помилки
     return [];
+  }
+};
+
+export const createEquipment = async (equipmentData) => {
+  try {
+    const response = await api.post('/equipment', equipmentData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating equipment:', error);
+    throw error;
+  }
+};
+
+export const updateEquipment = async (equipmentId, equipmentData) => {
+  try {
+    const response = await api.put(`/equipment/${equipmentId}`, equipmentData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating equipment:', error);
+    throw error;
+  }
+};
+
+// Delete equipment (owner only)
+export const deleteEquipment = async (equipmentId) => {
+  try {
+    const response = await api.delete(`/equipment/${equipmentId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting equipment:', error);
+    throw error;
   }
 };
 
@@ -153,19 +194,21 @@ export const getRentals = async (filters = {}) => {
   }
 };
 
-export const deleteRental = async (id) => {
+export const updateRentalStatus = async (rentalId, statusData) => {
   try {
-    const response = await api.delete(`/rentals/${id}`);
+    const response = await api.put(`/rentals/${rentalId}/status`, statusData);
     return response.data;
   } catch (error) {
-    console.error('Error deleting rental:', error);
+    console.error('Error updating rental status:', error);
     throw error;
   }
 };
 
 export default {
   getEquipment,
+  createEquipment,
+  updateEquipment,
   createRental,
   getRentals,
-  deleteRental,
+  updateRentalStatus,
 };

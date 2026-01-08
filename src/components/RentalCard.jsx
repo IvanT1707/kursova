@@ -55,7 +55,101 @@ const getImagePath = (imagePath) => {
   return `/images/${imagePath}`;
 };
 
-const RentalCard = ({ rental, onCancel }) => {
+// Status styling and text helpers
+const getStatusStyle = (status) => {
+  switch (status) {
+    case 'requested':
+      return { color: '#ffc107', backgroundColor: '#fff8e1' };
+    case 'approved':
+      return { color: '#007bff', backgroundColor: '#e7f3ff' };
+    case 'shipped':
+      return { color: '#17a2b8', backgroundColor: '#d1ecf1' };
+    case 'active':
+      return { color: '#28a745', backgroundColor: '#d4edda' };
+    case 'returning':
+      return { color: '#fd7e14', backgroundColor: '#ffeaa7' };
+    case 'completed':
+      return { color: '#28a745', backgroundColor: '#d4edda' };
+    case 'rejected':
+      return { color: '#dc3545', backgroundColor: '#f8d7da' };
+    case 'cancelled':
+      return { color: '#6c757d', backgroundColor: '#f8f9fa' };
+    default:
+      return { color: '#6c757d', backgroundColor: '#f8f9fa' };
+  }
+};
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 'requested': return 'Запитано';
+    case 'approved': return 'Схвалено';
+    case 'shipped': return 'Надіслано';
+    case 'active': return 'Активна';
+    case 'returning': return 'Повертається';
+    case 'completed': return 'Завершено';
+    case 'rejected': return 'Відхилено';
+    case 'cancelled': return 'Скасовано';
+    default: return 'Невідомий статус';
+  }
+};
+
+// Button styles
+const cancelButtonStyle = {
+  backgroundColor: '#dc3545',
+  color: 'white',
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: '600'
+};
+
+const actionButtonStyle = {
+  backgroundColor: '#007bff',
+  color: 'white',
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: '600'
+};
+
+const approveButtonStyle = {
+  backgroundColor: '#28a745',
+  color: 'white',
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: '600'
+};
+
+const rejectButtonStyle = {
+  backgroundColor: '#dc3545',
+  color: 'white',
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: '600'
+};
+
+const completeButtonStyle = {
+  backgroundColor: '#17a2b8',
+  color: 'white',
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: '600'
+};
+
+const RentalCard = ({ rental, onCancel, onStatusUpdate, userRole }) => {
   // Skip rendering if no valid rental data
   if (!rental || typeof rental !== 'object') {
     console.warn('Invalid rental data:', rental);
@@ -65,48 +159,31 @@ const RentalCard = ({ rental, onCancel }) => {
   // Extract with safe defaults
   const { 
     name = 'Назва не вказана',
-    startDate: startDateRaw, 
-    endDate: endDateRaw, 
+    durationDays = 1,
     quantity = 1,
     price = 0,
-    image = '',
-    status = 'active'
+    status = 'requested',
+    userRole: rentalUserRole = 'renter',
+    trackingNumber = '',
+    returnTrackingNumber = '',
+    actualStartDate,
+    actualEndDate,
+    image = ''
   } = rental;
   
-  // Convert dates BEFORE any comparisons or rendering
-  const startDate = safeToDate(startDateRaw);
-  const endDate = safeToDate(endDateRaw);
-  const now = new Date();
-  
-  // Validate converted dates
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    console.warn('Invalid dates after conversion:', { startDate, endDate, original: { startDateRaw, endDateRaw }});
-    return (
-      <div className="rental-card" style={{
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        padding: '16px',
-        margin: '8px 0',
-        backgroundColor: '#fff8f8',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <h3 style={{ marginTop: 0, marginBottom: '12px', color: '#dc3545' }}>
-          {String(name)}
-        </h3>
-        <p style={{ color: '#dc3545' }}>Помилка: Невалідні дати оренди</p>
-      </div>
-    );
-  }
-  
   // Check rental status
-  const isExpired = endDate < now;
   const isCompleted = status === 'completed';
+  const isRejected = status === 'rejected';
   const isCancelled = status === 'cancelled';
-  const isUpcoming = startDate > now && !isCompleted && !isCancelled;
-  const isActive = !isExpired && !isUpcoming && !isCompleted && !isCancelled;
+  const isRequested = status === 'requested';
+  const isApproved = status === 'approved';
+  const isShipped = status === 'shipped';
+  const isActive = status === 'active';
+  const isReturning = status === 'returning';
 
-  // Format date for display - ensure we return strings
+  // Format date for display
   const formatDisplayDate = (date) => {
+    if (!date) return 'Не встановлено';
     try {
       const d = safeToDate(date);
       if (isNaN(d.getTime())) {
@@ -129,8 +206,8 @@ const RentalCard = ({ rental, onCancel }) => {
       borderRadius: '8px',
       padding: '16px',
       margin: '8px 0',
-      backgroundColor: isActive ? '#f8f9fa' : '#fff8f8',
-      opacity: isExpired ? 0.7 : 1,
+      backgroundColor: isActive ? '#f8f9fa' : '#fff',
+      opacity: isCompleted || isRejected || isCancelled ? 0.8 : 1,
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
       {image && (
@@ -150,111 +227,146 @@ const RentalCard = ({ rental, onCancel }) => {
           }}
         />
       )}
-      <h3 style={{ marginTop: 0, marginBottom: '12px', color: isExpired ? '#6c757d' : '#212529' }}>
+      <h3 style={{ marginTop: 0, marginBottom: '12px' }}>
         {String(name)}
       </h3>
       
       <div style={{ marginBottom: '8px' }}>
-        <p style={{ margin: '4px 0' }}><strong>Початок:</strong> {formatDisplayDate(startDate)}</p>
-        <p style={{ margin: '4px 0' }}><strong>Закінчення:</strong> {formatDisplayDate(endDate)}</p>
+        <p style={{ margin: '4px 0' }}><strong>Тривалість:</strong> {durationDays} днів</p>
         <p style={{ margin: '4px 0' }}><strong>Кількість:</strong> {String(quantity)}</p>
         <p style={{ margin: '4px 0' }}><strong>Ціна:</strong> {formatPrice(price)} грн</p>
+        {actualStartDate && (
+          <p style={{ margin: '4px 0' }}><strong>Початок:</strong> {formatDisplayDate(actualStartDate)}</p>
+        )}
+        {actualEndDate && (
+          <p style={{ margin: '4px 0' }}><strong>Закінчення:</strong> {formatDisplayDate(actualEndDate)}</p>
+        )}
+        {trackingNumber && (
+          <p style={{ margin: '4px 0' }}><strong>ТТН відправки:</strong> {trackingNumber}</p>
+        )}
+        {returnTrackingNumber && (
+          <p style={{ margin: '4px 0' }}><strong>ТТН повернення:</strong> {returnTrackingNumber}</p>
+        )}
       </div>
       
-      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {isCompleted ? (
-          <span style={{ 
-            color: '#28a745',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#d4edda',
-            display: 'inline-block'
-          }}>
-            Завершено
-          </span>
-        ) : isCancelled ? (
-          <span style={{ 
-            color: '#6c757d',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#f8f9fa',
-            display: 'inline-block'
-          }}>
-            Скасовано
-          </span>
-        ) : isExpired ? (
-          <span style={{ 
-            color: '#dc3545',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#ffebee',
-            display: 'inline-block'
-          }}>
-            Прострочено
-          </span>
-        ) : isUpcoming ? (
-          <span style={{ 
-            color: '#ffc107',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#fff8e1',
-            display: 'inline-block'
-          }}>
-            Очікується
-          </span>
-        ) : isActive ? (
-          <span style={{ 
-            color: '#007bff',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#e7f3ff',
-            display: 'inline-block'
-          }}>
-            Активна
-          </span>
-        ) : (
-          <span style={{ 
-            color: '#6c757d',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#f8f9fa',
-            display: 'inline-block'
-          }}>
-            Невідомий статус
-          </span>
-        )}
+      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        {/* Status display */}
+        <span style={{ 
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          ...getStatusStyle(status)
+        }}>
+          {getStatusText(status)}
+        </span>
         
-        {/* Кнопка скасування тільки для активних оренд */}
-        {isActive && (
-          <button 
-            onClick={onCancel}
-            style={{
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontWeight: '600',
-              fontSize: '14px',
-              boxShadow: '0 2px 4px rgba(220, 53, 69, 0.2)',
-              minWidth: '120px'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = '#c82333';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#dc3545';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(220, 53, 69, 0.2)';
-            }}
-          >
-            Скасувати оренду
-          </button>
-        )}
+        {/* Action buttons based on status and user role */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {rentalUserRole === 'renter' && isRequested && (
+            <button 
+              onClick={() => onCancel && onCancel()}
+              style={cancelButtonStyle}
+            >
+              Скасувати
+            </button>
+          )}
+          
+          {rentalUserRole === 'renter' && isShipped && (
+            <button 
+              onClick={() => onStatusUpdate && onStatusUpdate(rental.id, 'active')}
+              style={actionButtonStyle}
+            >
+              Підтвердити отримання
+            </button>
+          )}
+          
+          {rentalUserRole === 'renter' && isActive && !returnTrackingNumber && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="ТТН повернення"
+                style={{ padding: '6px', border: '1px solid #ccc', borderRadius: '4px', width: '120px' }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    const now = new Date();
+                    if (actualEndDate && now < new Date(actualEndDate)) {
+                      if (!window.confirm('Ви повертаєте товар раніше терміну оренди. Ви впевнені?')) return;
+                    }
+                    onStatusUpdate && onStatusUpdate(rental.id, 'returning', { returnTrackingNumber: e.target.value.trim() });
+                  }
+                }}
+              />
+              <button
+                onClick={() => {
+                  const input = document.querySelector(`input[placeholder="ТТН повернення"]`);
+                  if (input && input.value.trim()) {
+                    const now = new Date();
+                    if (actualEndDate && now < new Date(actualEndDate)) {
+                      if (!window.confirm('Ви повертаєте товар раніше терміну оренди. Ви впевнені?')) return;
+                    }
+                    onStatusUpdate && onStatusUpdate(rental.id, 'returning', { returnTrackingNumber: input.value.trim() });
+                  }
+                }}
+                style={actionButtonStyle}
+              >
+                Надіслати назад
+              </button>
+            </div>
+          )}
+          
+          {rentalUserRole === 'owner' && isRequested && (
+            <>
+              <button 
+                onClick={() => onStatusUpdate && onStatusUpdate(rental.id, 'approved')}
+                style={approveButtonStyle}
+              >
+                Схвалити
+              </button>
+              <button 
+                onClick={() => onStatusUpdate && onStatusUpdate(rental.id, 'rejected')}
+                style={rejectButtonStyle}
+              >
+                Відхилити
+              </button>
+            </>
+          )}
+          
+          {rentalUserRole === 'owner' && isApproved && !trackingNumber && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="ТТН відправки"
+                style={{ padding: '6px', border: '1px solid #ccc', borderRadius: '4px', width: '120px' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    onStatusUpdate && onStatusUpdate(rental.id, 'shipped', { trackingNumber: e.target.value.trim() });
+                  }
+                }}
+              />
+              <button 
+                onClick={() => {
+                  const input = document.querySelector(`input[placeholder="ТТН відправки"]`);
+                  if (input && input.value.trim()) {
+                    onStatusUpdate && onStatusUpdate(rental.id, 'shipped', { trackingNumber: input.value.trim() });
+                  }
+                }}
+                style={actionButtonStyle}
+              >
+                Надіслати
+              </button>
+            </div>
+          )}
+          
+          {rentalUserRole === 'owner' && isReturning && (
+            <button 
+              onClick={() => onStatusUpdate && onStatusUpdate(rental.id, 'completed')}
+              style={completeButtonStyle}
+            >
+              Підтвердити отримання
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
